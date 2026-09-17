@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(git --version)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(npm i *)",
+      "Bash(npm run *)",
+      "Bash(npx electron-rebuild *)",
+      "Bash(echo \"退出码: $?\")",
+      "Bash(node -p \"require\\('./node_modules/electron/package.json'\\).version\")",
+      "Bash(node -p \"require\\('./node_modules/better-sqlite3/package.json'\\).version\")",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://api.github.com/repos/WiseLibs/better-sqlite3/releases/tags/v13.0.3\")",
+      "Bash(grep -o '\"name\": \"[^\"]*\"' /tmp/rel.json | head -50)",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const p=require\\('d:/Documents/Claude/个人记账APP/node_modules/better-sqlite3/package.json'\\); console.log\\('install脚本:', p.scripts && p.scripts.install\\); console.log\\('optionalDependencies:', JSON.stringify\\(p.optionalDependencies, null, 2\\)\\); console.log\\('版本:', p.version\\)\")",
+      "Bash(env)",
+      "Bash(curl -sI -m 20 \"https://github.com/electron/electron/releases/download/v44.4.1/electron-v44.4.1-win32-x64.zip\")",
+      "Bash(curl -sI -m 20 \"https://npmmirror.com/mirrors/electron/v44.4.1/electron-v44.4.1-win32-x64.zip\")",
+      "Bash(node install.js)",
+      "Bash(npx electron *)",
+      "Bash(rm -f test-abi.cjs rebuild-log.txt)",
+      "Bash(npm un *)",
+      "Bash(env -u ELECTRON_RUN_AS_NODE npm run dev)",
+      "Bash(reg query *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'chore: 初始化 Electron 项目骨架\\(Electron + React + TypeScript + Ant Design + ECharts\\) *)"
+    ]
+  }
+}
