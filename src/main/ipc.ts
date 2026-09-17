@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import { getDb } from './db'
 import type {
   Category,
+  NewCategory,
   NewTransaction,
   Transaction,
   TransactionFilters,
@@ -23,12 +24,97 @@ const SELECT_TX_WITH_CATEGORY = `
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('categories:list', (): Category[] => {
-    return getDb()
+    const cats = getDb()
       .prepare(
         `SELECT id, level, parent_id AS parentId, name, sort_order AS sortOrder, is_builtin AS isBuiltin
          FROM categories ORDER BY sort_order, id`
       )
       .all() as Category[]
+    const rows = getDb()
+      .prepare('SELECT category_id AS cid, COUNT(*) AS cnt FROM transactions GROUP BY category_id')
+      .all() as { cid: number; cnt: number }[]
+    const counts = new Map(rows.map((r) => [r.cid, r.cnt]))
+    // 一级分类的账目数 = 其下所有二级分类账目数之和
+    const l1Counts = new Map<number, number>()
+    for (const c of cats) {
+      if (c.level === 2 && c.parentId !== null) {
+        l1Counts.set(c.parentId, (l1Counts.get(c.parentId) ?? 0) + (counts.get(c.id) ?? 0))
+      }
+    }
+    return cats.map((c) => ({
+      ...c,
+      usageCount: c.level === 1 ? (l1Counts.get(c.id) ?? 0) : (counts.get(c.id) ?? 0)
+    }))
+  })
+
+  ipcMain.handle('categories:add', (_event, data: NewCategory): Category => {
+    const name = validateCategoryName(data?.name)
+    if (data.level !== 1 && data.level !== 2) throw new Error('分类层级无效')
+    const db = getDb()
+    let parentId: number | null = null
+    if (data.level === 1) {
+      if (data.parentId !== null) throw new Error('一级分类不需要父分类')
+    } else {
+      const parent = db
+        .prepare('SELECT level FROM categories WHERE id = ?')
+        .get(data.parentId) as { level: number } | undefined
+      if (!parent || parent.level !== 1) throw new Error('父分类无效,请选择正确的一级分类')
+      parentId = data.parentId
+    }
+    const maxSort = (
+      db.prepare('SELECT MAX(sort_order) AS m FROM categories WHERE parent_id IS ?').get(parentId) as {
+        m: number | null
+      }
+    ).m
+    const info = db
+      .prepare(
+        'INSERT INTO categories (level, parent_id, name, sort_order, is_builtin) VALUES (?, ?, ?, ?, 0)'
+      )
+      .run(data.level, parentId, name, (maxSort ?? -1) + 1)
+    const row = db
+      .prepare(
+        `SELECT id, level, parent_id AS parentId, name, sort_order AS sortOrder, is_builtin AS isBuiltin
+         FROM categories WHERE id = ?`
+      )
+      .get(info.lastInsertRowid) as Category
+    return { ...row, usageCount: 0 }
+  })
+
+  ipcMain.handle('categories:update', (_event, id: number, name: string): Category => {
+    if (!Number.isInteger(id)) throw new Error('分类编号无效')
+    const trimmed = validateCategoryName(name)
+    const info = getDb().prepare('UPDATE categories SET name = ? WHERE id = ?').run(trimmed, id)
+    if (info.changes === 0) throw new Error('分类不存在')
+    const row = getDb()
+      .prepare(
+        `SELECT id, level, parent_id AS parentId, name, sort_order AS sortOrder, is_builtin AS isBuiltin
+         FROM categories WHERE id = ?`
+      )
+      .get(id) as Category
+    return { ...row, usageCount: 0 }
+  })
+
+  ipcMain.handle('categories:delete', (_event, id: number): void => {
+    if (!Number.isInteger(id)) throw new Error('分类编号无效')
+    const db = getDb()
+    const cat = db.prepare('SELECT level FROM categories WHERE id = ?').get(id) as
+      | { level: number }
+      | undefined
+    if (!cat) throw new Error('分类不存在')
+    if (cat.level === 1) {
+      const childCnt = (
+        db.prepare('SELECT COUNT(*) AS c FROM categories WHERE parent_id = ?').get(id) as { c: number }
+      ).c
+      if (childCnt > 0) throw new Error('该分类下还有二级分类,请先删除其下的二级分类')
+    } else {
+      const txCnt = (
+        db.prepare('SELECT COUNT(*) AS c FROM transactions WHERE category_id = ?').get(id) as {
+          c: number
+        }
+      ).c
+      if (txCnt > 0) throw new Error(`该分类下还有 ${txCnt} 笔账目,无法删除。请先删除或修改这些账目`)
+    }
+    db.prepare('DELETE FROM categories WHERE id = ?').run(id)
   })
 
   ipcMain.handle('transactions:add', (_event, data: NewTransaction): Transaction => {
@@ -88,6 +174,14 @@ export function registerIpcHandlers(): void {
         .all(...params) as TransactionWithCategory[]
     }
   )
+}
+
+function validateCategoryName(name: unknown): string {
+  if (typeof name !== 'string') throw new Error('分类名称无效')
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('分类名称不能为空')
+  if (trimmed.length > 20) throw new Error('分类名称过长(最多 20 个字)')
+  return trimmed
 }
 
 function validateNewTransaction(data: NewTransaction): void {

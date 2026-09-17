@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   Category,
+  NewCategory,
   NewTransaction,
   Transaction,
   TransactionFilters,
@@ -11,6 +12,10 @@ import type {
 const api = {
   appName: '个人记账',
   listCategories: (): Promise<Category[]> => ipcRenderer.invoke('categories:list'),
+  addCategory: (data: NewCategory): Promise<Category> => ipcRenderer.invoke('categories:add', data),
+  updateCategory: (id: number, name: string): Promise<Category> =>
+    ipcRenderer.invoke('categories:update', id, name),
+  deleteCategory: (id: number): Promise<void> => ipcRenderer.invoke('categories:delete', id),
   addTransaction: (data: NewTransaction): Promise<Transaction> =>
     ipcRenderer.invoke('transactions:add', data),
   updateTransaction: (id: number, data: NewTransaction): Promise<Transaction> =>

@@ -7,6 +7,13 @@ export interface Category {
   name: string
   sortOrder: number
   isBuiltin: boolean
+  usageCount: number // 该分类下的账目数(一级分类为其下所有二级分类之和)
+}
+
+export interface NewCategory {
+  name: string
+  level: 1 | 2
+  parentId: number | null
 }
 
 export interface Transaction {
