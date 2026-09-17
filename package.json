@@ -1,22 +1,20 @@
 {
   "name": "personal-ledger",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "个人记账 —— 跨平台个人花销记账应用(Windows / macOS)",
+  "author": "个人记账",
   "main": "./out/main/index.js",
   "private": true,
   "scripts": {
     "dev": "node scripts/run.mjs dev",
     "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false && tsc --noEmit -p tsconfig.web.json --composite false",
     "build": "npm run typecheck && electron-vite build",
-    "start": "node scripts/run.mjs preview"
+    "start": "node scripts/run.mjs preview",
+    "pack:win": "npm run build && electron-builder --win",
+    "pack:mac": "npm run build && electron-builder --mac"
   },
   "dependencies": {
-    "antd": "^6.6.4",
-    "better-sqlite3": "^13.0.3",
-    "dayjs": "^1.11.23",
-    "echarts": "^6.1.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
@@ -24,8 +22,14 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.2.0",
+    "antd": "^6.6.4",
+    "dayjs": "^1.11.23",
+    "echarts": "^6.1.0",
     "electron": "^44.4.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^7.0.2",
     "vite": "^7.3.6"
   }

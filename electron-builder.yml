@@ -1,0 +1,29 @@
+appId: com.personalledger.app
+productName: 个人记账
+# better-sqlite3 v13 自带 N-API 通用成品,无需按 Electron 版本重新编译(已实测验证);
+# 本机没有 Visual Studio 编译环境,关闭打包时的自动重编译步骤
+npmRebuild: false
+directories:
+  output: dist
+files:
+  - out/**
+  - package.json
+asar: true
+win:
+  target:
+    - nsis
+    - zip
+  artifactName: ${productName}-${version}-${os}-${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: always
+  shortcutName: 个人记账
+  installerLanguages:
+    - zh_CN
+mac:
+  target:
+    - dmg
+  category: public.app-category.finance
+  artifactName: ${productName}-${version}-${os}-${ext}
