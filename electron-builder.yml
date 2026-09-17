@@ -13,7 +13,7 @@ win:
   target:
     - nsis
     - zip
-  artifactName: ${productName}-${version}-${os}-${ext}
+  artifactName: ${productName}-${version}-${os}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -26,4 +26,4 @@ mac:
   target:
     - dmg
   category: public.app-category.finance
-  artifactName: ${productName}-${version}-${os}-${ext}
+  artifactName: ${productName}-${version}-${os}.${ext}
