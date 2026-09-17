@@ -31,3 +31,9 @@ export interface NewTransaction {
   date: string
   note: string
 }
+
+export interface TransactionFilters {
+  month?: string // YYYY-MM
+  categoryId?: number // 一级分类 id
+  keyword?: string // 备注关键字
+}
