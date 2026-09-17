@@ -2,8 +2,11 @@ import { ipcMain } from 'electron'
 import { getDb } from './db'
 import type {
   Category,
+  CategoryStat,
+  MonthStat,
   NewCategory,
   NewTransaction,
+  StatsData,
   Transaction,
   TransactionFilters,
   TransactionWithCategory
@@ -174,6 +177,51 @@ export function registerIpcHandlers(): void {
         .all(...params) as TransactionWithCategory[]
     }
   )
+
+  ipcMain.handle('stats:get', (): StatsData => {
+    const db = getDb()
+    const now = new Date()
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthRow = db
+      .prepare(
+        'SELECT COALESCE(SUM(amount_cents), 0) AS total, COUNT(*) AS cnt FROM transactions WHERE date LIKE ?'
+      )
+      .get(`${month}%`) as { total: number; cnt: number }
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const byCategory = db
+      .prepare(
+        `SELECT p.id AS categoryId, p.name, COALESCE(SUM(t.amount_cents), 0) AS totalCents
+         FROM transactions t
+         JOIN categories c ON c.id = t.category_id
+         JOIN categories p ON p.id = c.parent_id
+         WHERE t.date LIKE ?
+         GROUP BY p.id
+         ORDER BY totalCents DESC, p.sort_order`
+      )
+      .all(`${month}%`) as CategoryStat[]
+    // 近 6 个月(含本月),无数据的月份补 0
+    const months: string[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    }
+    const rows = db
+      .prepare(
+        `SELECT substr(date, 1, 7) AS month, SUM(amount_cents) AS totalCents
+         FROM transactions WHERE date >= ? GROUP BY month`
+      )
+      .all(`${months[0]}-01`) as MonthStat[]
+    const rowMap = new Map(rows.map((r) => [r.month, r.totalCents]))
+    const trend = months.map((m) => ({ month: m, totalCents: rowMap.get(m) ?? 0 }))
+    return {
+      month,
+      totalCents: monthRow.total,
+      count: monthRow.cnt,
+      dailyAvgCents: daysInMonth > 0 ? Math.round(monthRow.total / daysInMonth) : 0,
+      byCategory,
+      trend
+    }
+  })
 }
 
 function validateCategoryName(name: unknown): string {

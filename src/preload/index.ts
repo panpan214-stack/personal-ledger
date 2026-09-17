@@ -3,6 +3,7 @@ import type {
   Category,
   NewCategory,
   NewTransaction,
+  StatsData,
   Transaction,
   TransactionFilters,
   TransactionWithCategory
@@ -22,7 +23,8 @@ const api = {
     ipcRenderer.invoke('transactions:update', id, data),
   deleteTransaction: (id: number): Promise<void> => ipcRenderer.invoke('transactions:delete', id),
   listTransactions: (filters?: TransactionFilters): Promise<TransactionWithCategory[]> =>
-    ipcRenderer.invoke('transactions:list', filters)
+    ipcRenderer.invoke('transactions:list', filters),
+  getStats: (): Promise<StatsData> => ipcRenderer.invoke('stats:get')
 }
 
 contextBridge.exposeInMainWorld('api', api)

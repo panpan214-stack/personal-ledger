@@ -44,3 +44,23 @@ export interface TransactionFilters {
   categoryId?: number // 一级分类 id
   keyword?: string // 备注关键字
 }
+
+export interface CategoryStat {
+  categoryId: number
+  name: string
+  totalCents: number
+}
+
+export interface MonthStat {
+  month: string // YYYY-MM
+  totalCents: number
+}
+
+export interface StatsData {
+  month: string // 统计月份 YYYY-MM
+  totalCents: number
+  count: number
+  dailyAvgCents: number
+  byCategory: CategoryStat[] // 按一级分类聚合,金额降序
+  trend: MonthStat[] // 近 6 个月(含本月),时间升序
+}

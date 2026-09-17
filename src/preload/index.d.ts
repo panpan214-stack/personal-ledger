@@ -2,6 +2,7 @@ import type {
   Category,
   NewCategory,
   NewTransaction,
+  StatsData,
   Transaction,
   TransactionFilters,
   TransactionWithCategory
@@ -17,6 +18,7 @@ export interface Api {
   updateTransaction: (id: number, data: NewTransaction) => Promise<Transaction>
   deleteTransaction: (id: number) => Promise<void>
   listTransactions: (filters?: TransactionFilters) => Promise<TransactionWithCategory[]>
+  getStats: () => Promise<StatsData>
 }
 
 declare global {
